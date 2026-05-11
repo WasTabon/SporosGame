@@ -77,6 +77,34 @@ public class Cell : MonoBehaviour
         ApplyVisual();
     }
 
+    public void ForceSetState(CellState s)
+    {
+        pulseTween?.Kill();
+        transform.DOKill();
+        transform.localScale = baseScale;
+
+        State = s;
+        switch (s)
+        {
+            case CellState.Inactive:
+                ApplyVisual();
+                break;
+            case CellState.Active:
+                fillRenderer.color = ColorActive;
+                outlineRenderer.color = ColorOutline;
+                glowRenderer.color = ColorGlow;
+                glowRenderer.gameObject.SetActive(true);
+                glowRenderer.transform.localScale = Vector3.one;
+                pulseTween = fillRenderer.DOFade(0.85f, 0.9f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
+                break;
+            case CellState.Occupied:
+                fillRenderer.color = ColorInactive;
+                outlineRenderer.color = ColorOccupied;
+                glowRenderer.gameObject.SetActive(false);
+                break;
+        }
+    }
+
     private void ApplyVisual()
     {
         fillRenderer.color = ColorInactive;

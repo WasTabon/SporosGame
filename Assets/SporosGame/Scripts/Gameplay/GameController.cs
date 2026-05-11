@@ -1,5 +1,5 @@
+using DG.Tweening;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 public class GameController : MonoBehaviour
 {
@@ -9,29 +9,50 @@ public class GameController : MonoBehaviour
     [SerializeField] private GameObject sporePrefab;
     [SerializeField] private Transform sporeParent;
     [SerializeField] private Camera gameCamera;
+    [SerializeField] private WinPopup winPopup;
+    [SerializeField] private LosePopup losePopup;
+    [SerializeField] private PausePopup pausePopup;
 
     private Spore activeDragSpore;
     private SporeInventoryItem activeItem;
     private LevelConfig currentLevel;
+    private UndoSystem undoSystem;
     private bool resolving;
-    private bool levelWon;
+    private bool levelEnded;
 
     private void Start()
     {
         if (gameCamera == null) gameCamera = Camera.main;
 
-        currentLevel = LevelConfig.CreateLevel1();
+        Time.timeScale = 1f;
+        undoSystem = new UndoSystem();
+
+        int idx = LevelProgress.CurrentLevel;
+        currentLevel = LevelConfig.CreateByIndex(idx);
         grid.Build(currentLevel.Width, currentLevel.Height, currentLevel.Cells);
         FitCameraToGrid();
         inventory.Build(currentLevel.Spores);
-        hud.SetLevel(1);
+        hud.SetLevel(currentLevel.LevelIndex);
         hud.StartTimer();
+        hud.SetUndoEnabled(false);
 
         inventory.OnItemDragBegin += HandleDragBegin;
         inventory.OnItemDragMove += HandleDragMove;
         inventory.OnItemDragEnd += HandleDragEnd;
 
-        hud.OnBackPressed += HandleBack;
+        hud.OnBackPressed += HandleMenu;
+        hud.OnPausePressed += HandlePause;
+        hud.OnUndoPressed += HandleUndo;
+        hud.OnResetPressed += HandleReset;
+
+        winPopup.OnNext += HandleNext;
+        winPopup.OnRetry += HandleReset;
+        winPopup.OnMenu += HandleMenu;
+        losePopup.OnRetry += HandleReset;
+        losePopup.OnMenu += HandleMenu;
+        pausePopup.OnResume += HandleResume;
+        pausePopup.OnRestart += HandleReset;
+        pausePopup.OnMenu += HandleMenu;
     }
 
     private void OnDestroy()
@@ -42,7 +63,31 @@ public class GameController : MonoBehaviour
             inventory.OnItemDragMove -= HandleDragMove;
             inventory.OnItemDragEnd -= HandleDragEnd;
         }
-        if (hud != null) hud.OnBackPressed -= HandleBack;
+        if (hud != null)
+        {
+            hud.OnBackPressed -= HandleMenu;
+            hud.OnPausePressed -= HandlePause;
+            hud.OnUndoPressed -= HandleUndo;
+            hud.OnResetPressed -= HandleReset;
+        }
+        if (winPopup != null)
+        {
+            winPopup.OnNext -= HandleNext;
+            winPopup.OnRetry -= HandleReset;
+            winPopup.OnMenu -= HandleMenu;
+        }
+        if (losePopup != null)
+        {
+            losePopup.OnRetry -= HandleReset;
+            losePopup.OnMenu -= HandleMenu;
+        }
+        if (pausePopup != null)
+        {
+            pausePopup.OnResume -= HandleResume;
+            pausePopup.OnRestart -= HandleReset;
+            pausePopup.OnMenu -= HandleMenu;
+        }
+        Time.timeScale = 1f;
     }
 
     private void FitCameraToGrid()
@@ -59,7 +104,7 @@ public class GameController : MonoBehaviour
 
     private void HandleDragBegin(SporeInventoryItem item, Vector3 wp)
     {
-        if (resolving || levelWon) return;
+        if (resolving || levelEnded) return;
         if (item.Count <= 0) return;
 
         float sporeScale = grid.CellSize * 0.45f;
@@ -86,6 +131,9 @@ public class GameController : MonoBehaviour
         var target = grid.FindClosestCell(wp, grid.CellSize * 0.7f);
         if (target != null && target.State == CellState.Inactive && target.Type != CellType.Block)
         {
+            undoSystem.SaveSnapshot(grid, inventory, activeDragSpore.gameObject, target.GridX, target.GridY, item.Type);
+            hud.SetUndoEnabled(true);
+
             inventory.ConsumeOne(item.Type);
             resolving = true;
             var spore = activeDragSpore;
@@ -107,21 +155,90 @@ public class GameController : MonoBehaviour
         resolving = false;
         if (grid.AreAllActivated())
         {
-            levelWon = true;
+            levelEnded = true;
             hud.StopTimer();
-            Debug.Log("[SporosGame] WIN! Time: " + hud.GetElapsed());
-            if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.Success);
             if (HapticManager.Instance != null) HapticManager.Instance.Play(HapticType.Success);
+            DOVirtual.DelayedCall(0.55f, ShowWin).SetUpdate(true);
         }
         else if (!inventory.HasAny())
         {
-            Debug.Log("[SporosGame] LOSE — no spores left, board incomplete");
-            if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.Fail);
+            levelEnded = true;
+            hud.StopTimer();
+            if (HapticManager.Instance != null) HapticManager.Instance.Play(HapticType.Failure);
+            DOVirtual.DelayedCall(0.4f, () =>
+            {
+                if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.Fail);
+                losePopup.Show();
+            }).SetUpdate(true);
         }
     }
 
-    private void HandleBack()
+    private void ShowWin()
     {
+        if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.Success);
+        winPopup.ShowWithStars(3);
+    }
+
+    private void HandleUndo()
+    {
+        if (!undoSystem.CanUndo || resolving || levelEnded) return;
+
+        var snap = undoSystem.Consume();
+
+        for (int y = 0; y < grid.Height; y++)
+        for (int x = 0; x < grid.Width; x++)
+        {
+            var c = grid.GetCell(x, y);
+            if (c != null) c.ForceSetState(snap.CellStates[x, y]);
+        }
+
+        foreach (var kv in snap.InventoryCounts)
+            inventory.SetCount(kv.Key, kv.Value);
+
+        for (int i = 0; i < snap.PlacedSpores.Count; i++)
+        {
+            var p = snap.PlacedSpores[i];
+            if (p.SporeGameObject != null)
+            {
+                var s = p.SporeGameObject.GetComponent<Spore>();
+                if (s != null) s.DestroySelf();
+                else Destroy(p.SporeGameObject);
+            }
+        }
+
+        hud.SetUndoEnabled(false);
+        if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.PopupClose);
+        if (HapticManager.Instance != null) HapticManager.Instance.Play(HapticType.Light);
+    }
+
+    private void HandleReset()
+    {
+        Time.timeScale = 1f;
+        TransitionManager.Instance.LoadScene("Game");
+    }
+
+    private void HandleNext()
+    {
+        Time.timeScale = 1f;
+        LevelProgress.AdvanceLevel();
+        TransitionManager.Instance.LoadScene("Game");
+    }
+
+    private void HandleMenu()
+    {
+        Time.timeScale = 1f;
         TransitionManager.Instance.LoadScene("MainMenu");
+    }
+
+    private void HandlePause()
+    {
+        if (levelEnded || resolving) return;
+        hud.PauseTimer();
+        pausePopup.Show();
+    }
+
+    private void HandleResume()
+    {
+        hud.ResumeTimer();
     }
 }

@@ -13,6 +13,8 @@ public class SporeInventory : MonoBehaviour
     public event Action<SporeInventoryItem, Vector3> OnItemDragMove;
     public event Action<SporeInventoryItem, Vector3> OnItemDragEnd;
 
+    public List<SporeInventoryItem> GetItems() => items;
+
     public void Build(List<LevelConfig.SporeStock> stocks)
     {
         Clear();
@@ -36,6 +38,12 @@ public class SporeInventory : MonoBehaviour
     {
         for (int i = 0; i < items.Count; i++)
             if (items[i].Type == type) { items[i].SetCount(items[i].Count - 1); return; }
+    }
+
+    public void SetCount(SporeType type, int count)
+    {
+        for (int i = 0; i < items.Count; i++)
+            if (items[i].Type == type) { items[i].SetCount(count); return; }
     }
 
     public bool HasAny()

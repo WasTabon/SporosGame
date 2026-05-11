@@ -15,7 +15,6 @@ public class PopupBase : MonoBehaviour
     protected virtual void Awake()
     {
         if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
-        gameObject.SetActive(false);
     }
 
     public virtual void Show()
@@ -25,19 +24,22 @@ public class PopupBase : MonoBehaviour
         if (backdrop != null)
         {
             var c = backdrop.color; c.a = 0f; backdrop.color = c;
-            backdrop.DOFade(BackdropAlpha, OpenDuration).SetEase(Ease.OutQuad);
+            backdrop.DOKill();
+            backdrop.DOFade(BackdropAlpha, OpenDuration).SetEase(Ease.OutQuad).SetUpdate(true);
         }
 
         if (content != null)
         {
+            content.DOKill();
             content.localScale = Vector3.zero;
             content.DOScale(1f, OpenDuration).SetEase(Ease.OutBack).SetUpdate(true);
         }
 
         if (canvasGroup != null)
         {
+            canvasGroup.DOKill();
             canvasGroup.alpha = 0f;
-            canvasGroup.DOFade(1f, OpenDuration * 0.6f).SetEase(Ease.OutQuad);
+            canvasGroup.DOFade(1f, OpenDuration * 0.6f).SetEase(Ease.OutQuad).SetUpdate(true);
             canvasGroup.blocksRaycasts = true;
             canvasGroup.interactable = true;
         }
@@ -51,10 +53,14 @@ public class PopupBase : MonoBehaviour
     public virtual void Hide()
     {
         if (backdrop != null)
-            backdrop.DOFade(0f, CloseDuration).SetEase(Ease.InQuad);
+        {
+            backdrop.DOKill();
+            backdrop.DOFade(0f, CloseDuration).SetEase(Ease.InQuad).SetUpdate(true);
+        }
 
         if (content != null)
         {
+            content.DOKill();
             content.DOScale(0f, CloseDuration).SetEase(Ease.InBack).SetUpdate(true)
                 .OnComplete(() =>
                 {
