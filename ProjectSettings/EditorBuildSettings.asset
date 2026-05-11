@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/SporosGame/Scenes/SampleScene.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
+    path: Assets/SporosGame/Scenes/MainMenu.unity
+    guid: 0ec010b2f09f43a4bbd44df7e3ed844d
+  - enabled: 1
+    path: Assets/SporosGame/Scenes/LevelSelect.unity
+    guid: fb2d06fed01ecae449ac8854f18c99cb
+  - enabled: 1
+    path: Assets/SporosGame/Scenes/Game.unity
+    guid: 8fae051506bca8a4ba35155040703c32
   m_configObjects: {}
