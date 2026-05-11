@@ -14,16 +14,44 @@ public class LevelConfig
         public int Count;
     }
 
-    public const int TotalLevels = 3;
+    public static LevelConfig FromData(LevelData data)
+    {
+        if (data == null) return Fallback();
+
+        var cfg = new LevelConfig
+        {
+            LevelIndex = data.levelIndex,
+            Width = data.width,
+            Height = data.height,
+            Cells = data.GetCellsArray(),
+            Spores = new List<SporeStock>()
+        };
+
+        if (data.spores != null)
+        {
+            for (int i = 0; i < data.spores.Length; i++)
+            {
+                cfg.Spores.Add(new SporeStock
+                {
+                    Type = data.spores[i].type,
+                    Count = data.spores[i].count
+                });
+            }
+        }
+
+        if (cfg.Spores.Count == 0)
+            cfg.Spores.Add(new SporeStock { Type = SporeType.Basic, Count = 3 });
+
+        return cfg;
+    }
 
     public static LevelConfig CreateByIndex(int idx)
     {
-        if (idx <= 1) return Level1();
-        if (idx == 2) return Level2();
-        return Level3();
+        var data = LevelManager.GetLevel(idx);
+        return FromData(data);
     }
 
-    private static LevelConfig Level1()
+    private static LevelConfig Fallback()
     {
         return new LevelConfig
         {
@@ -31,58 +59,18 @@ public class LevelConfig
             Width = 3,
             Height = 3,
             Cells = new CellType[3, 3],
-            Spores = new List<SporeStock>
-            {
-                new SporeStock { Type = SporeType.Basic, Count = 3 }
-            }
-        };
-    }
-
-    private static LevelConfig Level2()
-    {
-        return new LevelConfig
-        {
-            LevelIndex = 2,
-            Width = 4,
-            Height = 3,
-            Cells = new CellType[4, 3],
-            Spores = new List<SporeStock>
-            {
-                new SporeStock { Type = SporeType.Basic, Count = 4 }
-            }
-        };
-    }
-
-    private static LevelConfig Level3()
-    {
-        return new LevelConfig
-        {
-            LevelIndex = 3,
-            Width = 4,
-            Height = 4,
-            Cells = new CellType[4, 4],
-            Spores = new List<SporeStock>
-            {
-                new SporeStock { Type = SporeType.Basic, Count = 5 }
-            }
+            Spores = new List<SporeStock> { new SporeStock { Type = SporeType.Basic, Count = 3 } }
         };
     }
 }
 
 public static class LevelProgress
 {
-    private const string KeyCurrent = "spo_current_level";
-
     public static int CurrentLevel
     {
-        get { return UnityEngine.PlayerPrefs.GetInt(KeyCurrent, 1); }
-        set { UnityEngine.PlayerPrefs.SetInt(KeyCurrent, value); UnityEngine.PlayerPrefs.Save(); }
+        get { return LevelManager.CurrentLevel; }
+        set { LevelManager.CurrentLevel = value; }
     }
 
-    public static void AdvanceLevel()
-    {
-        int n = CurrentLevel + 1;
-        if (n > LevelConfig.TotalLevels) n = 1;
-        CurrentLevel = n;
-    }
+    public static void AdvanceLevel() => LevelManager.AdvanceLevel();
 }

@@ -27,7 +27,7 @@ public class GameController : MonoBehaviour
         Time.timeScale = 1f;
         undoSystem = new UndoSystem();
 
-        int idx = LevelProgress.CurrentLevel;
+        int idx = LevelManager.CurrentLevel;
         currentLevel = LevelConfig.CreateByIndex(idx);
         grid.Build(currentLevel.Width, currentLevel.Height, currentLevel.Cells);
         FitCameraToGrid();
@@ -163,7 +163,9 @@ public class GameController : MonoBehaviour
             hud.StopTimer();
             ScreenShake.Shake(0.28f, 0.5f);
             if (HapticManager.Instance != null) HapticManager.Instance.Play(HapticType.Success);
-            DOVirtual.DelayedCall(0.55f, ShowWin).SetUpdate(true);
+            int stars = 3;
+            LevelManager.SetStars(currentLevel.LevelIndex, stars);
+            DOVirtual.DelayedCall(0.55f, () => ShowWin(stars)).SetUpdate(true);
         }
         else if (!inventory.HasAny())
         {
@@ -178,10 +180,10 @@ public class GameController : MonoBehaviour
         }
     }
 
-    private void ShowWin()
+    private void ShowWin(int stars)
     {
         if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.Success);
-        winPopup.ShowWithStars(3);
+        winPopup.ShowWithStars(stars);
     }
 
     private void HandleUndo()
@@ -225,7 +227,7 @@ public class GameController : MonoBehaviour
     private void HandleNext()
     {
         Time.timeScale = 1f;
-        LevelProgress.AdvanceLevel();
+        LevelManager.AdvanceLevel();
         TransitionManager.Instance.LoadScene("Game");
     }
 
