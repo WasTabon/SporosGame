@@ -14,6 +14,7 @@ public class Spore : MonoBehaviour
     private GridSystem grid;
     private bool placed;
     private float placedScale = 0.6f;
+    private Tween idleTween;
 
     private static readonly Color CoreBasic    = new Color(1f, 0f, 0.898f, 1f);
     private static readonly Color GlowBasic    = new Color(1f, 0f, 0.898f, 0.55f);
@@ -31,6 +32,11 @@ public class Spore : MonoBehaviour
     }
 
     public void SetPlacedScale(float s) => placedScale = s;
+
+    public Color GetColor()
+    {
+        return type == SporeType.Diagonal ? CoreDiagonal : CoreBasic;
+    }
 
     private void ApplyVisual()
     {
@@ -71,6 +77,15 @@ public class Spore : MonoBehaviour
         transform.DOScale(targetScale, 0.22f).SetEase(Ease.OutBack);
 
         cell.MarkOccupied();
+
+        var sporeColor = GetColor();
+        if (EffectsManager.Instance != null)
+        {
+            EffectsManager.Instance.SpawnRing(cell.WorldPos, sporeColor, grid.CellSize);
+            EffectsManager.Instance.SpawnBurst(cell.WorldPos, sporeColor);
+        }
+        ScreenShake.Shake(0.08f, 0.18f);
+
         if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.Click);
         if (HapticManager.Instance != null) HapticManager.Instance.Play(HapticType.Medium);
 
@@ -84,6 +99,7 @@ public class Spore : MonoBehaviour
         for (int i = 0; i < rayCoroutines.Count; i++)
             yield return rayCoroutines[i];
 
+        StartIdle();
         onComplete?.Invoke();
     }
 
@@ -112,12 +128,20 @@ public class Spore : MonoBehaviour
     {
         var go = Instantiate(rayPrefab, transform.parent);
         var seg = go.GetComponent<RaySegment>();
-        var col = type == SporeType.Diagonal ? CoreDiagonal : CoreBasic;
+        var col = GetColor();
         seg.Play(from, to, col);
+    }
+
+    private void StartIdle()
+    {
+        idleTween?.Kill();
+        var s = transform.localScale;
+        idleTween = transform.DOScale(s * 1.06f, 1.1f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
     }
 
     public void DestroySelf()
     {
+        idleTween?.Kill();
         transform.DOKill();
         glowRenderer.transform.DOKill();
         Destroy(gameObject);

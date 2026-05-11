@@ -31,6 +31,9 @@ public class GameController : MonoBehaviour
         currentLevel = LevelConfig.CreateByIndex(idx);
         grid.Build(currentLevel.Width, currentLevel.Height, currentLevel.Cells);
         FitCameraToGrid();
+
+        ScreenShake.SetTarget(grid.transform);
+
         inventory.Build(currentLevel.Spores);
         hud.SetLevel(currentLevel.LevelIndex);
         hud.StartTimer();
@@ -144,6 +147,7 @@ public class GameController : MonoBehaviour
         else
         {
             if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.Fail);
+            if (HapticManager.Instance != null) HapticManager.Instance.Play(HapticType.Warning);
             activeDragSpore.DestroySelf();
             activeDragSpore = null;
             activeItem = null;
@@ -157,6 +161,7 @@ public class GameController : MonoBehaviour
         {
             levelEnded = true;
             hud.StopTimer();
+            ScreenShake.Shake(0.28f, 0.5f);
             if (HapticManager.Instance != null) HapticManager.Instance.Play(HapticType.Success);
             DOVirtual.DelayedCall(0.55f, ShowWin).SetUpdate(true);
         }

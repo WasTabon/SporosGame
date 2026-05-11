@@ -55,6 +55,9 @@ public class Cell : MonoBehaviour
         pulseTween?.Kill();
         pulseTween = fillRenderer.DOFade(0.85f, 0.9f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
 
+        if (EffectsManager.Instance != null)
+            EffectsManager.Instance.SpawnBurst(transform.position, ColorActive);
+
         if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.Pop);
     }
 
