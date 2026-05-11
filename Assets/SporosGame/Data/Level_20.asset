@@ -27,3 +27,8 @@ MonoBehaviour:
   - type: 0
     count: 14
   isExtraPack: 0
+  minSporesForThreeStars: 10
+  maxSporesForOneStar: 14
+  timeForThreeStars: 147
+  timeForOneStar: 588
+  coinsReward: 157

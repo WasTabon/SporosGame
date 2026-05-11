@@ -1,5 +1,6 @@
 using System;
 using DG.Tweening;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,10 @@ public class WinPopup : PopupBase
     [SerializeField] private Button retryButton;
     [SerializeField] private Button menuButton;
     [SerializeField] private Image[] starIcons;
+    [SerializeField] private TMP_Text coinRewardText;
+    [SerializeField] private Image coinRewardIcon;
+    [SerializeField] private RectTransform coinFlySource;
+    [SerializeField] private CoinFlyEffect coinFlyEffect;
 
     public event Action OnNext;
     public event Action OnRetry;
@@ -25,15 +30,48 @@ public class WinPopup : PopupBase
         menuButton.onClick.AddListener(() => { Hide(); OnMenu?.Invoke(); });
     }
 
-    public void ShowWithStars(int stars)
+    public void ShowWithResults(int stars, int coinsEarned, RectTransform coinTarget)
     {
         for (int i = 0; i < starIcons.Length; i++)
         {
             starIcons[i].color = StarOff;
             starIcons[i].transform.localScale = Vector3.zero;
         }
+        if (coinRewardText != null)
+        {
+            coinRewardText.text = "+0";
+            coinRewardText.transform.localScale = Vector3.one;
+        }
+        if (coinRewardIcon != null) coinRewardIcon.transform.localScale = Vector3.one;
+
         Show();
         AnimateStars(stars);
+
+        if (coinsEarned <= 0) return;
+
+        bool canFly = coinTarget != null && coinFlyEffect != null && coinFlySource != null;
+        float starDelay = 0.35f + starIcons.Length * 0.18f + 0.1f;
+
+        DOVirtual.DelayedCall(starDelay, () =>
+        {
+            if (coinRewardText != null)
+            {
+                coinRewardText.text = "+" + coinsEarned;
+                coinRewardText.transform.DOKill();
+                coinRewardText.transform.localScale = Vector3.zero;
+                coinRewardText.transform.DOScale(1f, 0.3f).SetEase(Ease.OutBack).SetUpdate(true);
+            }
+
+            if (canFly)
+            {
+                coinFlyEffect.Fly(Mathf.Min(coinsEarned, 8), coinFlySource, coinTarget, null, null);
+                DOVirtual.DelayedCall(0.4f, () => CurrencyManager.AddCoins(coinsEarned)).SetUpdate(true);
+            }
+            else
+            {
+                CurrencyManager.AddCoins(coinsEarned);
+            }
+        }).SetUpdate(true);
     }
 
     private void AnimateStars(int stars)

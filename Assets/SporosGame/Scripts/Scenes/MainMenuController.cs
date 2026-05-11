@@ -11,6 +11,7 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private TMP_Text logoText;
     [SerializeField] private PopupBase settingsPopup;
     [SerializeField] private PopupBase shopPopup;
+    [SerializeField] private CoinCounter coinCounter;
 
     private void Start()
     {

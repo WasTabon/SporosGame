@@ -6,6 +6,7 @@ public static class LevelManager
 
     private const string KeyCurrent = "spo_current_level";
     private const string KeyStarsPrefix = "spo_level_stars_";
+    private const string KeyCoinsAwardedPrefix = "spo_level_coins_awarded_";
     private const string KeyExtraUnlocked = "spo_extra_unlocked";
 
     public static LevelDatabase Database
@@ -54,6 +55,22 @@ public static class LevelManager
             PlayerPrefs.SetInt(KeyStarsPrefix + levelIdx, stars);
             PlayerPrefs.Save();
         }
+    }
+
+    public static int GetCoinsAwarded(int levelIdx)
+    {
+        return PlayerPrefs.GetInt(KeyCoinsAwardedPrefix + levelIdx, 0);
+    }
+
+    public static int AwardCoinsForLevel(int levelIdx, int totalForCurrentStars)
+    {
+        int already = GetCoinsAwarded(levelIdx);
+        int delta = totalForCurrentStars - already;
+        if (delta <= 0) return 0;
+        PlayerPrefs.SetInt(KeyCoinsAwardedPrefix + levelIdx, totalForCurrentStars);
+        PlayerPrefs.Save();
+        CurrencyManager.AddCoins(delta);
+        return delta;
     }
 
     public static bool IsUnlocked(int levelIdx)

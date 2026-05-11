@@ -12,13 +12,16 @@ public class GameController : MonoBehaviour
     [SerializeField] private WinPopup winPopup;
     [SerializeField] private LosePopup losePopup;
     [SerializeField] private PausePopup pausePopup;
+    [SerializeField] private CoinCounter hudCoinCounter;
 
     private Spore activeDragSpore;
     private SporeInventoryItem activeItem;
     private LevelConfig currentLevel;
+    private LevelData currentLevelData;
     private UndoSystem undoSystem;
     private bool resolving;
     private bool levelEnded;
+    private int sporesUsed;
 
     private void Start()
     {
@@ -26,8 +29,10 @@ public class GameController : MonoBehaviour
 
         Time.timeScale = 1f;
         undoSystem = new UndoSystem();
+        sporesUsed = 0;
 
         int idx = LevelManager.CurrentLevel;
+        currentLevelData = LevelManager.GetLevel(idx);
         currentLevel = LevelConfig.CreateByIndex(idx);
         grid.Build(currentLevel.Width, currentLevel.Height, currentLevel.Cells);
         FitCameraToGrid();
@@ -138,6 +143,7 @@ public class GameController : MonoBehaviour
             hud.SetUndoEnabled(true);
 
             inventory.ConsumeOne(item.Type);
+            sporesUsed++;
             resolving = true;
             var spore = activeDragSpore;
             activeDragSpore = null;
@@ -163,9 +169,12 @@ public class GameController : MonoBehaviour
             hud.StopTimer();
             ScreenShake.Shake(0.28f, 0.5f);
             if (HapticManager.Instance != null) HapticManager.Instance.Play(HapticType.Success);
-            int stars = 3;
+
+            int stars = StarCalculator.Calculate(currentLevelData, sporesUsed, hud.GetElapsed());
             LevelManager.SetStars(currentLevel.LevelIndex, stars);
-            DOVirtual.DelayedCall(0.55f, () => ShowWin(stars)).SetUpdate(true);
+            int totalCoinsForStars = StarCalculator.CoinsForStars(currentLevelData, stars);
+
+            DOVirtual.DelayedCall(0.55f, () => ShowWin(stars, totalCoinsForStars)).SetUpdate(true);
         }
         else if (!inventory.HasAny())
         {
@@ -180,10 +189,20 @@ public class GameController : MonoBehaviour
         }
     }
 
-    private void ShowWin(int stars)
+    private void ShowWin(int stars, int totalCoinsForStars)
     {
         if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.Success);
-        winPopup.ShowWithStars(stars);
+
+        int already = LevelManager.GetCoinsAwarded(currentLevel.LevelIndex);
+        int delta = Mathf.Max(0, totalCoinsForStars - already);
+        if (delta > 0)
+        {
+            PlayerPrefs.SetInt("spo_level_coins_awarded_" + currentLevel.LevelIndex, totalCoinsForStars);
+            PlayerPrefs.Save();
+        }
+
+        RectTransform target = hudCoinCounter != null ? hudCoinCounter.IconRect : null;
+        winPopup.ShowWithResults(stars, delta, target);
     }
 
     private void HandleUndo()
@@ -212,6 +231,8 @@ public class GameController : MonoBehaviour
                 else Destroy(p.SporeGameObject);
             }
         }
+
+        sporesUsed = Mathf.Max(0, sporesUsed - 1);
 
         hud.SetUndoEnabled(false);
         if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.PopupClose);
