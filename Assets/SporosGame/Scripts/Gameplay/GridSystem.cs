@@ -70,8 +70,9 @@ public class GridSystem : MonoBehaviour
         var all = GetAllCells();
         for (int i = 0; i < all.Count; i++)
         {
-            if (all[i].Type == CellType.Block) continue;
-            if (all[i].State == CellState.Inactive) return false;
+            var c = all[i];
+            if (!c.CountsForWin()) continue;
+            if (c.State == CellState.Inactive) return false;
         }
         return true;
     }

@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelIndex: 5
   width: 4
-  height: 3
+  height: 4
   rows:
   - cells: 00000000000000000000000000000000
-  - cells: 00000000000000000000000000000000
+  - cells: 00000000010000000000000000000000
+  - cells: 00000000000000000100000000000000
   - cells: 00000000000000000000000000000000
   spores:
   - type: 0
@@ -25,6 +26,6 @@ MonoBehaviour:
   isExtraPack: 0
   minSporesForThreeStars: 3
   maxSporesForOneStar: 4
-  timeForThreeStars: 36
-  timeForOneStar: 144
-  coinsReward: 46
+  timeForThreeStars: 42
+  timeForOneStar: 168
+  coinsReward: 58

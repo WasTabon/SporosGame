@@ -18,15 +18,17 @@ MonoBehaviour:
   rows:
   - cells: 0000000000000000000000000000000000000000
   - cells: 0000000000000000000000000000000000000000
-  - cells: 0000000000000000000000000000000000000000
+  - cells: 0000000000000000010000000000000000000000
   - cells: 0000000000000000000000000000000000000000
   - cells: 0000000000000000000000000000000000000000
   spores:
   - type: 0
-    count: 8
+    count: 2
+  - type: 1
+    count: 3
   isExtraPack: 0
-  minSporesForThreeStars: 6
-  maxSporesForOneStar: 8
-  timeForThreeStars: 75
-  timeForOneStar: 300
+  minSporesForThreeStars: 4
+  maxSporesForOneStar: 5
+  timeForThreeStars: 72
+  timeForOneStar: 288
   coinsReward: 85

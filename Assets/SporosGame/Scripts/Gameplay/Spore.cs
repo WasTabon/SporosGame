@@ -119,7 +119,17 @@ public class Spore : MonoBehaviour
 
             SpawnRaySegment(prev.WorldPos, next.WorldPos);
             yield return new WaitForSeconds(0.06f);
-            if (next.State == CellState.Inactive) next.Activate();
+
+            bool wasLimitedActive = next.Type == CellType.Limited && next.State != CellState.Inactive;
+
+            if (next.State == CellState.Inactive && next.CanBeActivated())
+                next.Activate();
+
+            if (next.IsBlockingRay() && next.Type == CellType.Limited && !wasLimitedActive)
+                break;
+            if (next.IsBlockingRay() && next.Type != CellType.Limited)
+                break;
+
             prev = next;
         }
     }
