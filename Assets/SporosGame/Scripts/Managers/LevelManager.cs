@@ -78,7 +78,10 @@ public static class LevelManager
         if (levelIdx <= 1) return true;
         var data = GetLevel(levelIdx);
         if (data == null) return false;
-        if (data.isExtraPack && !IsExtraPackUnlocked()) return false;
+        if (data.isExtraPack)
+        {
+            return IsExtraPackUnlocked();
+        }
         return GetStars(levelIdx - 1) > 0;
     }
 

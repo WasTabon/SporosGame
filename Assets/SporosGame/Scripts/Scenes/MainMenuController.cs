@@ -9,8 +9,8 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Button settingsButton;
     [SerializeField] private Button shopButton;
     [SerializeField] private TMP_Text logoText;
-    [SerializeField] private PopupBase settingsPopup;
-    [SerializeField] private PopupBase shopPopup;
+    [SerializeField] private SettingsPopup settingsPopup;
+    [SerializeField] private ShopPopup shopPopup;
     [SerializeField] private CoinCounter coinCounter;
 
     private void Start()
@@ -24,20 +24,21 @@ public class MainMenuController : MonoBehaviour
             logoText.transform.localScale = Vector3.one * 0.85f;
             logoText.transform.DOScale(1f, 1.8f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
         }
+
+        if (shopPopup != null) shopPopup.OnPurchaseSuccess += HandlePurchaseSuccess;
     }
 
-    private void OnPlay()
+    private void OnDestroy()
     {
-        TransitionManager.Instance.LoadScene("LevelSelect");
+        if (shopPopup != null) shopPopup.OnPurchaseSuccess -= HandlePurchaseSuccess;
     }
 
-    private void OnSettings()
-    {
-        if (settingsPopup != null) settingsPopup.Show();
-    }
+    private void OnPlay() { TransitionManager.Instance.LoadScene("LevelSelect"); }
+    private void OnSettings() { if (settingsPopup != null) settingsPopup.Show(); }
+    private void OnShop() { if (shopPopup != null) shopPopup.Show(); }
 
-    private void OnShop()
+    private void HandlePurchaseSuccess()
     {
-        if (shopPopup != null) shopPopup.Show();
+        if (shopPopup != null) shopPopup.RefreshState();
     }
 }
