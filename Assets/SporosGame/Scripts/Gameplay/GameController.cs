@@ -13,6 +13,7 @@ public class GameController : MonoBehaviour
     [SerializeField] private LosePopup losePopup;
     [SerializeField] private PausePopup pausePopup;
     [SerializeField] private CoinCounter hudCoinCounter;
+    [SerializeField] private TutorialManager tutorialManager;
 
     private Spore activeDragSpore;
     private SporeInventoryItem activeItem;
@@ -61,6 +62,35 @@ public class GameController : MonoBehaviour
         pausePopup.OnResume += HandleResume;
         pausePopup.OnRestart += HandleReset;
         pausePopup.OnMenu += HandleMenu;
+
+        TryStartTutorial(idx);
+    }
+
+    private void TryStartTutorial(int levelIdx)
+    {
+        if (tutorialManager == null) return;
+        if (levelIdx > 3) return;
+        if (TutorialManager.IsCompleted(levelIdx)) return;
+
+        var items = inventory.GetItems();
+        RectTransform sporeRect = null;
+        if (items != null && items.Count > 0) sporeRect = items[0].GetComponent<RectTransform>();
+        if (sporeRect == null) return;
+
+        Vector3 targetWorld = GetTutorialTargetCellWorld();
+        tutorialManager.StartTutorial(levelIdx, sporeRect, targetWorld, gameCamera);
+    }
+
+    private Vector3 GetTutorialTargetCellWorld()
+    {
+        int cx = grid.Width / 2;
+        int cy = grid.Height / 2;
+        var cell = grid.GetCell(cx, cy);
+        if (cell != null && cell.Type != CellType.Block) return cell.WorldPos;
+        var all = grid.GetAllCells();
+        for (int i = 0; i < all.Count; i++)
+            if (all[i].Type != CellType.Block) return all[i].WorldPos;
+        return Vector3.zero;
     }
 
     private void OnDestroy()
@@ -115,6 +145,8 @@ public class GameController : MonoBehaviour
         if (resolving || levelEnded) return;
         if (item.Count <= 0) return;
 
+        if (tutorialManager != null && tutorialManager.IsActive) tutorialManager.OnDragStarted();
+
         float sporeScale = grid.CellSize * 0.45f;
 
         var go = Instantiate(sporePrefab, sporeParent);
@@ -148,6 +180,9 @@ public class GameController : MonoBehaviour
             var spore = activeDragSpore;
             activeDragSpore = null;
             activeItem = null;
+
+            if (tutorialManager != null && tutorialManager.IsActive) tutorialManager.OnPlacementSucceeded();
+
             StartCoroutine(spore.PlaceAndEmit(target, grid, OnSporeResolved));
         }
         else
@@ -157,6 +192,13 @@ public class GameController : MonoBehaviour
             activeDragSpore.DestroySelf();
             activeDragSpore = null;
             activeItem = null;
+
+            if (tutorialManager != null && tutorialManager.IsActive)
+            {
+                var items = inventory.GetItems();
+                if (items != null && items.Count > 0)
+                    tutorialManager.RefreshIfActive(items[0].GetComponent<RectTransform>());
+            }
         }
     }
 
@@ -242,12 +284,14 @@ public class GameController : MonoBehaviour
     private void HandleReset()
     {
         Time.timeScale = 1f;
+        if (tutorialManager != null) tutorialManager.Stop();
         TransitionManager.Instance.LoadScene("Game");
     }
 
     private void HandleNext()
     {
         Time.timeScale = 1f;
+        if (tutorialManager != null) tutorialManager.Stop();
         LevelManager.AdvanceLevel();
         TransitionManager.Instance.LoadScene("Game");
     }
@@ -255,12 +299,14 @@ public class GameController : MonoBehaviour
     private void HandleMenu()
     {
         Time.timeScale = 1f;
+        if (tutorialManager != null) tutorialManager.Stop();
         TransitionManager.Instance.LoadScene("MainMenu");
     }
 
     private void HandlePause()
     {
         if (levelEnded || resolving) return;
+        if (tutorialManager != null) tutorialManager.Stop();
         hud.PauseTimer();
         pausePopup.Show();
     }
@@ -268,5 +314,6 @@ public class GameController : MonoBehaviour
     private void HandleResume()
     {
         hud.ResumeTimer();
+        TryStartTutorial(currentLevel.LevelIndex);
     }
 }
