@@ -16,6 +16,7 @@ public class LevelButton : MonoBehaviour
 
     private int levelIndex;
     private bool unlocked;
+    private Tween sparkleTween;
 
     public event Action<int> OnClicked;
 
@@ -53,6 +54,13 @@ public class LevelButton : MonoBehaviour
             stars[i].color = (i < starCount && unlocked) ? ColorStarOn : ColorStarOff;
             stars[i].gameObject.SetActive(unlocked);
         }
+
+        sparkleTween?.Kill();
+        if (unlocked && starCount >= 3)
+        {
+            float delay = UnityEngine.Random.Range(0f, 3f);
+            sparkleTween = transform.DOScale(1.04f, 1.2f).SetDelay(delay).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
+        }
     }
 
     private void HandleClick()
@@ -66,5 +74,10 @@ public class LevelButton : MonoBehaviour
             return;
         }
         OnClicked?.Invoke(levelIndex);
+    }
+
+    private void OnDestroy()
+    {
+        sparkleTween?.Kill();
     }
 }

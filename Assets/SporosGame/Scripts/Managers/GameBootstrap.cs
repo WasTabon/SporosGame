@@ -36,5 +36,10 @@ public class GameBootstrap : MonoBehaviour
             var go = new GameObject("TransitionManager");
             go.AddComponent<TransitionManager>();
         }
+        if (FindObjectOfType<AmbientMusic>() == null)
+        {
+            var go = new GameObject("AmbientMusic");
+            go.AddComponent<AmbientMusic>();
+        }
     }
 }

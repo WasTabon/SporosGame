@@ -4,9 +4,9 @@ using UnityEngine;
 public class ParticleBurst : MonoBehaviour
 {
     [SerializeField] private Sprite particleSprite;
-    [SerializeField] private int particleCount = 10;
-    [SerializeField] private float radius = 1.2f;
-    [SerializeField] private float duration = 0.55f;
+    [SerializeField] private int particleCount = 12;
+    [SerializeField] private float radius = 1.3f;
+    [SerializeField] private float duration = 0.65f;
     [SerializeField] private float particleSize = 0.18f;
 
     public void Play(Color color)

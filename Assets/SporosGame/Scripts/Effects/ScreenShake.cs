@@ -23,4 +23,9 @@ public static class ScreenShake
         activeTween = shakeTarget.DOShakePosition(duration, new Vector3(intensity, intensity, 0f), 20, 90, false, true)
             .OnComplete(() => { if (shakeTarget != null) shakeTarget.localPosition = originalPos; });
     }
+
+    public static void MicroShake()
+    {
+        Shake(0.04f, 0.1f);
+    }
 }

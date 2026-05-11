@@ -279,6 +279,7 @@ public class GameController : MonoBehaviour
         hud.SetUndoEnabled(false);
         if (SoundManager.Instance != null) SoundManager.Instance.PlaySfx(SfxType.PopupClose);
         if (HapticManager.Instance != null) HapticManager.Instance.Play(HapticType.Light);
+        ScreenShake.MicroShake();
     }
 
     private void HandleReset()

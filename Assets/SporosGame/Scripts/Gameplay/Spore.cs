@@ -15,6 +15,7 @@ public class Spore : MonoBehaviour
     private bool placed;
     private float placedScale = 0.6f;
     private Tween idleTween;
+    private Tween glowRotateTween;
 
     private static readonly Color CoreBasic    = new Color(1f, 0f, 0.898f, 1f);
     private static readonly Color GlowBasic    = new Color(1f, 0f, 0.898f, 0.55f);
@@ -100,6 +101,7 @@ public class Spore : MonoBehaviour
             yield return rayCoroutines[i];
 
         StartIdle();
+        StartGlowRotation();
         onComplete?.Invoke();
     }
 
@@ -149,9 +151,19 @@ public class Spore : MonoBehaviour
         idleTween = transform.DOScale(s * 1.06f, 1.1f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
     }
 
+    private void StartGlowRotation()
+    {
+        glowRotateTween?.Kill();
+        if (glowRenderer == null) return;
+        glowRenderer.transform.localEulerAngles = Vector3.zero;
+        glowRotateTween = glowRenderer.transform.DORotate(new Vector3(0, 0, 360f), 8f, RotateMode.FastBeyond360)
+            .SetEase(Ease.Linear).SetLoops(-1, LoopType.Restart);
+    }
+
     public void DestroySelf()
     {
         idleTween?.Kill();
+        glowRotateTween?.Kill();
         transform.DOKill();
         glowRenderer.transform.DOKill();
         Destroy(gameObject);

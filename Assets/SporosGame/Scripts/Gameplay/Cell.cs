@@ -35,6 +35,7 @@ public class Cell : MonoBehaviour
     private Vector3 baseScale;
     private Tween pulseTween;
     private Tween fixedIdleTween;
+    private Tween idleBreathTween;
 
     public bool IsBlockingRay()
     {
@@ -67,6 +68,19 @@ public class Cell : MonoBehaviour
 
         ApplyVisual();
         if (type == CellType.Fixed) StartFixedIdlePulse();
+        if (type == CellType.Normal) StartIdleBreathing();
+    }
+
+    private void StartIdleBreathing()
+    {
+        idleBreathTween?.Kill();
+        float delay = Random.Range(0f, 2.5f);
+        idleBreathTween = fillRenderer.DOFade(0.85f, 2.5f).SetDelay(delay).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
+    }
+
+    private void StopIdleBreathing()
+    {
+        idleBreathTween?.Kill();
     }
 
     public void Activate()
@@ -75,6 +89,7 @@ public class Cell : MonoBehaviour
         if (!CanBeActivated()) return;
         State = CellState.Active;
 
+        StopIdleBreathing();
         ApplyActivatedVisual();
 
         transform.DOKill();
@@ -106,6 +121,7 @@ public class Cell : MonoBehaviour
     {
         if (Type == CellType.Block) return;
         State = CellState.Occupied;
+        StopIdleBreathing();
         outlineRenderer.color = ColorOccupied;
 
         transform.DOKill();
@@ -118,16 +134,19 @@ public class Cell : MonoBehaviour
         State = CellState.Inactive;
         pulseTween?.Kill();
         fixedIdleTween?.Kill();
+        idleBreathTween?.Kill();
         transform.DOKill();
         transform.localScale = baseScale;
         ApplyVisual();
         if (Type == CellType.Fixed) StartFixedIdlePulse();
+        if (Type == CellType.Normal) StartIdleBreathing();
     }
 
     public void ForceSetState(CellState s)
     {
         pulseTween?.Kill();
         fixedIdleTween?.Kill();
+        idleBreathTween?.Kill();
         transform.DOKill();
         transform.localScale = baseScale;
 
@@ -136,6 +155,7 @@ public class Cell : MonoBehaviour
         {
             ApplyVisual();
             if (Type == CellType.Fixed) StartFixedIdlePulse();
+            if (Type == CellType.Normal) StartIdleBreathing();
             return;
         }
         if (s == CellState.Active)
@@ -252,6 +272,7 @@ public class Cell : MonoBehaviour
     {
         pulseTween?.Kill();
         fixedIdleTween?.Kill();
+        idleBreathTween?.Kill();
         transform.DOKill();
     }
 }
