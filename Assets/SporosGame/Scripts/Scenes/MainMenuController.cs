@@ -8,17 +8,21 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Button playButton;
     [SerializeField] private Button settingsButton;
     [SerializeField] private Button shopButton;
+    [SerializeField] private Button achievementsButton;
     [SerializeField] private TMP_Text logoText;
     [SerializeField] private SettingsPopup settingsPopup;
     [SerializeField] private ShopPopup shopPopup;
-    [SerializeField] private CoinCounter coinCounter;
     [SerializeField] private DailyRewardPopup dailyRewardPopup;
+    [SerializeField] private AchievementsPopup achievementsPopup;
+    [SerializeField] private AchievementUnlockedPopup achievementUnlockedPopup;
+    [SerializeField] private CoinCounter coinCounter;
 
     private void Start()
     {
         playButton.onClick.AddListener(OnPlay);
         settingsButton.onClick.AddListener(OnSettings);
         shopButton.onClick.AddListener(OnShop);
+        if (achievementsButton != null) achievementsButton.onClick.AddListener(OnAchievements);
 
         if (logoText != null)
         {
@@ -27,6 +31,9 @@ public class MainMenuController : MonoBehaviour
         }
 
         if (shopPopup != null) shopPopup.OnPurchaseSuccess += HandlePurchaseSuccess;
+        if (dailyRewardPopup != null) dailyRewardPopup.OnClaimed += HandleDailyClaimed;
+
+        if (achievementUnlockedPopup != null) achievementUnlockedPopup.Enable();
 
         TryShowDailyReward();
     }
@@ -34,6 +41,7 @@ public class MainMenuController : MonoBehaviour
     private void OnDestroy()
     {
         if (shopPopup != null) shopPopup.OnPurchaseSuccess -= HandlePurchaseSuccess;
+        if (dailyRewardPopup != null) dailyRewardPopup.OnClaimed -= HandleDailyClaimed;
     }
 
     private void TryShowDailyReward()
@@ -50,9 +58,16 @@ public class MainMenuController : MonoBehaviour
     private void OnPlay() { TransitionManager.Instance.LoadScene("LevelSelect"); }
     private void OnSettings() { if (settingsPopup != null) settingsPopup.Show(); }
     private void OnShop() { if (shopPopup != null) shopPopup.Show(); }
+    private void OnAchievements() { if (achievementsPopup != null) achievementsPopup.Show(); }
 
     private void HandlePurchaseSuccess()
     {
         if (shopPopup != null) shopPopup.RefreshState();
+        AchievementsManager.OnExtraPackPurchased();
+    }
+
+    private void HandleDailyClaimed()
+    {
+        AchievementsManager.OnDailyClaim();
     }
 }

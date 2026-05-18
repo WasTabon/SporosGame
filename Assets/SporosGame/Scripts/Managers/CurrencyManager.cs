@@ -23,6 +23,13 @@ public static class CurrencyManager
     {
         if (amount <= 0) return;
         Coins = Coins + amount;
+        AchievementsManager.OnCoinsEarned(amount);
+    }
+
+    public static void AddCoinsWithoutTracking(int amount)
+    {
+        if (amount <= 0) return;
+        Coins = Coins + amount;
     }
 
     public static bool SpendCoins(int amount)

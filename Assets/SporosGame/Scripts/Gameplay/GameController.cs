@@ -14,6 +14,7 @@ public class GameController : MonoBehaviour
     [SerializeField] private PausePopup pausePopup;
     [SerializeField] private CoinCounter hudCoinCounter;
     [SerializeField] private TutorialManager tutorialManager;
+    [SerializeField] private AchievementUnlockedPopup achievementUnlockedPopup;
 
     private Spore activeDragSpore;
     private SporeInventoryItem activeItem;
@@ -23,6 +24,7 @@ public class GameController : MonoBehaviour
     private bool resolving;
     private bool levelEnded;
     private int sporesUsed;
+    private bool usedUndoThisLevel;
 
     private void Start()
     {
@@ -31,6 +33,7 @@ public class GameController : MonoBehaviour
         Time.timeScale = 1f;
         undoSystem = new UndoSystem();
         sporesUsed = 0;
+        usedUndoThisLevel = false;
 
         int idx = LevelManager.CurrentLevel;
         currentLevelData = LevelManager.GetLevel(idx);
@@ -62,6 +65,8 @@ public class GameController : MonoBehaviour
         pausePopup.OnResume += HandleResume;
         pausePopup.OnRestart += HandleReset;
         pausePopup.OnMenu += HandleMenu;
+
+        if (achievementUnlockedPopup != null) achievementUnlockedPopup.Enable();
 
         TryStartTutorial(idx);
     }
@@ -216,6 +221,8 @@ public class GameController : MonoBehaviour
             LevelManager.SetStars(currentLevel.LevelIndex, stars);
             int totalCoinsForStars = StarCalculator.CoinsForStars(currentLevelData, stars);
 
+            AchievementsManager.OnLevelCompleted(currentLevel.LevelIndex, stars, usedUndoThisLevel);
+
             DOVirtual.DelayedCall(0.55f, () => ShowWin(stars, totalCoinsForStars)).SetUpdate(true);
         }
         else if (!inventory.HasAny())
@@ -250,6 +257,8 @@ public class GameController : MonoBehaviour
     private void HandleUndo()
     {
         if (!undoSystem.CanUndo || resolving || levelEnded) return;
+
+        usedUndoThisLevel = true;
 
         var snap = undoSystem.Consume();
 
