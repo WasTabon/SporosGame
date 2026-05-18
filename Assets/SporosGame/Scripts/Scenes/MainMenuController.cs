@@ -12,6 +12,7 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private SettingsPopup settingsPopup;
     [SerializeField] private ShopPopup shopPopup;
     [SerializeField] private CoinCounter coinCounter;
+    [SerializeField] private DailyRewardPopup dailyRewardPopup;
 
     private void Start()
     {
@@ -26,11 +27,24 @@ public class MainMenuController : MonoBehaviour
         }
 
         if (shopPopup != null) shopPopup.OnPurchaseSuccess += HandlePurchaseSuccess;
+
+        TryShowDailyReward();
     }
 
     private void OnDestroy()
     {
         if (shopPopup != null) shopPopup.OnPurchaseSuccess -= HandlePurchaseSuccess;
+    }
+
+    private void TryShowDailyReward()
+    {
+        if (dailyRewardPopup == null) return;
+        if (!DailyRewardManager.IsRewardAvailable()) return;
+        DOVirtual.DelayedCall(0.6f, () =>
+        {
+            RectTransform target = coinCounter != null ? coinCounter.IconRect : null;
+            dailyRewardPopup.ShowWithCoinTarget(target);
+        }).SetUpdate(true);
     }
 
     private void OnPlay() { TransitionManager.Instance.LoadScene("LevelSelect"); }
