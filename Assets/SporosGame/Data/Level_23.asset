@@ -24,12 +24,12 @@ MonoBehaviour:
   - cells: 00000000000000000000000000000000000000000000000002000000
   spores:
   - type: 0
-    count: 6
-  - type: 1
     count: 2
+  - type: 1
+    count: 5
   isExtraPack: 1
   minSporesForThreeStars: 6
-  maxSporesForOneStar: 8
+  maxSporesForOneStar: 7
   timeForThreeStars: 120
   timeForOneStar: 480
-  coinsReward: 188
+  coinsReward: 136

@@ -8,6 +8,8 @@ public class Spore : MonoBehaviour
     [SerializeField] private SpriteRenderer coreRenderer;
     [SerializeField] private SpriteRenderer glowRenderer;
     [SerializeField] private GameObject rayPrefab;
+    [SerializeField] private SpriteRenderer[] arrowBasic;
+    [SerializeField] private SpriteRenderer[] arrowDiagonal;
 
     private SporeType type;
     private Cell originCell;
@@ -16,6 +18,7 @@ public class Spore : MonoBehaviour
     private float placedScale = 0.6f;
     private Tween idleTween;
     private Tween glowRotateTween;
+    private List<Tween> arrowPulseTweens = new List<Tween>();
 
     private static readonly Color CoreBasic    = new Color(1f, 0f, 0.898f, 1f);
     private static readonly Color GlowBasic    = new Color(1f, 0f, 0.898f, 0.55f);
@@ -30,6 +33,7 @@ public class Spore : MonoBehaviour
         type = t;
         ApplyVisual();
         StartPulse();
+        SetupArrows();
     }
 
     public void SetPlacedScale(float s) => placedScale = s;
@@ -53,6 +57,71 @@ public class Spore : MonoBehaviour
         }
     }
 
+    private void SetupArrows()
+    {
+        KillArrowTweens();
+
+        bool isDiag = type == SporeType.Diagonal;
+        Color col = GetColor();
+
+        if (arrowBasic != null)
+        {
+            for (int i = 0; i < arrowBasic.Length; i++)
+            {
+                if (arrowBasic[i] == null) continue;
+                arrowBasic[i].gameObject.SetActive(!isDiag);
+                if (!isDiag) { arrowBasic[i].color = col; StartArrowPulse(arrowBasic[i].transform); }
+            }
+        }
+        if (arrowDiagonal != null)
+        {
+            for (int i = 0; i < arrowDiagonal.Length; i++)
+            {
+                if (arrowDiagonal[i] == null) continue;
+                arrowDiagonal[i].gameObject.SetActive(isDiag);
+                if (isDiag) { arrowDiagonal[i].color = col; StartArrowPulse(arrowDiagonal[i].transform); }
+            }
+        }
+    }
+
+    private void StartArrowPulse(Transform t)
+    {
+        Vector3 basePos = t.localPosition;
+        Vector3 outward = basePos * 1.18f;
+        var tween = t.DOLocalMove(outward, 0.6f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
+        arrowPulseTweens.Add(tween);
+    }
+
+    private void KillArrowTweens()
+    {
+        for (int i = 0; i < arrowPulseTweens.Count; i++)
+            if (arrowPulseTweens[i] != null) arrowPulseTweens[i].Kill();
+        arrowPulseTweens.Clear();
+    }
+
+    private void HideArrows()
+    {
+        KillArrowTweens();
+        if (arrowBasic != null)
+        {
+            for (int i = 0; i < arrowBasic.Length; i++)
+            {
+                if (arrowBasic[i] == null) continue;
+                arrowBasic[i].DOKill();
+                arrowBasic[i].DOFade(0f, 0.2f).OnComplete(() => { if (arrowBasic[i] != null) arrowBasic[i].gameObject.SetActive(false); });
+            }
+        }
+        if (arrowDiagonal != null)
+        {
+            for (int i = 0; i < arrowDiagonal.Length; i++)
+            {
+                if (arrowDiagonal[i] == null) continue;
+                arrowDiagonal[i].DOKill();
+                arrowDiagonal[i].DOFade(0f, 0.2f).OnComplete(() => { if (arrowDiagonal[i] != null) arrowDiagonal[i].gameObject.SetActive(false); });
+            }
+        }
+    }
+
     private void StartPulse()
     {
         glowRenderer.transform.DOKill();
@@ -70,6 +139,8 @@ public class Spore : MonoBehaviour
         placed = true;
         originCell = cell;
         grid = g;
+
+        HideArrows();
 
         transform.DOKill();
         transform.DOMove(cell.WorldPos, 0.18f).SetEase(Ease.OutBack);
@@ -164,6 +235,7 @@ public class Spore : MonoBehaviour
     {
         idleTween?.Kill();
         glowRotateTween?.Kill();
+        KillArrowTweens();
         transform.DOKill();
         glowRenderer.transform.DOKill();
         Destroy(gameObject);

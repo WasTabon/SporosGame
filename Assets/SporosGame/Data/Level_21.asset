@@ -25,11 +25,9 @@ MonoBehaviour:
   spores:
   - type: 0
     count: 5
-  - type: 1
-    count: 2
   isExtraPack: 1
-  minSporesForThreeStars: 5
-  maxSporesForOneStar: 7
+  minSporesForThreeStars: 4
+  maxSporesForOneStar: 5
   timeForThreeStars: 96
   timeForOneStar: 384
-  coinsReward: 164
+  coinsReward: 118
